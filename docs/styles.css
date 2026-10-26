@@ -43,7 +43,7 @@
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-soft: cubic-bezier(0.45, 0, 0.2, 1);
   --radius: 28px;
-  --gutter: clamp(16px, 4vw, 48px);
+  --gutter: max(clamp(16px, 4vw, 48px), env(safe-area-inset-left), env(safe-area-inset-right));
 }
 
 /* ---------- Base ---------- */
@@ -188,12 +188,13 @@ body.is-scrolled .nav, body.is-searching .nav { background: rgba(24, 24, 32, 0.4
   position: relative;
   min-height: 100svh;
   display: grid;
+  grid-template-columns: minmax(0, 1fr); /* Safari: never let the column grow wider than the screen */
   place-items: center;
   padding: 120px var(--gutter) 90px;
   overflow: clip;
   transition: min-height 1s var(--ease), padding 1s var(--ease);
 }
-.hero__inner { width: min(860px, 100%); display: flex; flex-direction: column; align-items: center; text-align: center; }
+.hero__inner { width: 100%; max-width: 860px; min-width: 0; display: flex; flex-direction: column; align-items: center; text-align: center; }
 
 
 .hero__badge { font-family: var(--serif); font-size: 15px; color: var(--text); margin: 0 0 26px; }
@@ -230,6 +231,7 @@ body.is-scrolled .nav, body.is-searching .nav { background: rgba(24, 24, 32, 0.4
 .hero__sub {
   margin: 22px 0 34px;
   max-width: 600px;
+  text-wrap: balance;
   font-size: clamp(16px, 1.7vw, 19px);
   line-height: 1.85;
   color: rgba(255, 255, 255, 0.86);
@@ -249,7 +251,8 @@ body.is-ready .reveal {
 /* ---------- Search bar ---------- */
 .search {
   position: relative;
-  width: min(640px, 100%);
+  width: 100%;
+  max-width: 640px;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -690,7 +693,7 @@ mark {
   .books { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding-bottom: 4px; }
   .books button { flex: none; }
 
-  .stage { overflow-x: clip; overflow-y: visible; --card-w: 84vw; --card-h: clamp(360px, calc(100svh - 330px), 520px); }
+  .stage { overflow-x: clip; overflow-y: visible; --card-w: 84vw; --card-h: clamp(340px, calc(100svh - 400px), 500px); }
   .stage__arrow { display: none; }
   .card { padding: 20px 20px 16px; }
   .card__source { font-size: 21px; }
