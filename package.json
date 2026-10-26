@@ -1,0 +1,14 @@
+{
+  "name": "sakinah",
+  "version": "1.0.0",
+  "description": "سكينة — بحث هادئ في القرآن الكريم والكتب الستة (موقع ثابت لـ GitHub Pages)",
+  "main": "server.js",
+  "private": true,
+  "scripts": {
+    "start": "node server.js",
+    "build-data": "node tools/build-data.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

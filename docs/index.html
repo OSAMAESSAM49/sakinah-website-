@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>سكينة · Sakinah — ابحث في القرآن الكريم والكتب الستة</title>
+  <meta name="description" content="سكينة: بحث هادئ وجميل في آيات القرآن الكريم وأحاديث الكتب الستة، بكلمة واحدة." />
+  <meta name="theme-color" content="#1E1E1E" />
+  <link rel="icon" href="assets/mark.svg" type="image/svg+xml" />
+  <link rel="preload" href="fonts/thmanyahserifdisplay-Bold.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="fonts/thmanyahsans-Regular.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <!-- Fallback only for Quranic pause marks (ۚ ۖ ۞) that Thmanyah does not include -->
+  <link href="https://fonts.googleapis.com/css2?family=Amiri&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- Background: landscape + light particles -->
+  <div class="scene" aria-hidden="true">
+    <div class="scene__img"></div>
+    <div class="scene__veil"></div>
+    <canvas class="scene__dust" id="dust"></canvas>
+  </div>
+
+  <!-- Navigation -->
+  <header class="nav" id="nav">
+    <a class="brand" href="./" aria-label="سكينة — الرئيسية">
+      <svg class="brand__mark" viewBox="0 0 48 48" aria-hidden="true">
+        <use href="#khatam" />
+      </svg>
+      <span class="brand__name">سكينة</span>
+      <span class="brand__latin">Sakinah</span>
+    </a>
+    <nav class="nav__links" aria-label="روابط">
+      <a href="#about" data-scroll>عن سكينة</a>
+      <a href="#sources" data-scroll>المصادر</a>
+    </nav>
+    <button class="nav__cta" id="dailyBtn" type="button">
+      <span class="nav__cta-dot"></span>آية اليوم
+    </button>
+  </header>
+
+  <main>
+    <!-- Hero / search -->
+    <section class="hero" id="hero">
+
+      <div class="hero__inner">
+        <p class="pill hero__badge reveal" style="--d:1">
+          <svg viewBox="0 0 48 48" aria-hidden="true"><use href="#khatam" /></svg>
+          ﴿ أَلَا بِذِكْرِ اللَّهِ تَطْمَئِنُّ الْقُلُوبُ ﴾
+        </p>
+
+        <h1 class="hero__title">
+          <span class="line reveal" style="--d:2">كلمة واحدة</span>
+          <span class="line reveal" style="--d:3">تفتح لك أبواب <em class="accent">السكينة</em></span>
+        </h1>
+
+        <p class="hero__sub reveal" style="--d:4">
+          ابحث عن أي معنى يشغل قلبك — الرزق، الصبر، الرحمة — في آيات القرآن الكريم
+          وأحاديث الكتب الستة، واقرأه في هدوء.
+        </p>
+
+        <form class="search reveal" style="--d:5" id="searchForm" role="search" autocomplete="off">
+          <span class="search__glow" aria-hidden="true"></span>
+          <svg class="search__icon" viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="11" cy="11" r="7" /><path d="m20 20-3.6-3.6" />
+          </svg>
+          <label class="sr-only" for="q">ابحث عن كلمة</label>
+          <input id="q" name="q" type="search" enterkeyhint="search" maxlength="60" placeholder="ابحث عن الرزق…" />
+          <button class="search__clear" type="button" id="clearBtn" aria-label="مسح">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
+          </button>
+          <button class="search__btn" type="submit">
+            <span>ابحث</span>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5m6-6-6 6 6 6" /></svg>
+          </button>
+        </form>
+
+        <div class="chips reveal" style="--d:6" id="chips" aria-label="اقتراحات">
+          <button type="button">الرزق</button>
+          <button type="button">السكينة</button>
+          <button type="button">الصبر</button>
+          <button type="button">الرحمة</button>
+          <button type="button">التوكل</button>
+          <button type="button">الدعاء</button>
+          <button type="button">الشكر</button>
+          <button type="button">الجنة</button>
+        </div>
+      </div>
+
+      <div class="scroll-hint reveal" style="--d:8" aria-hidden="true"><span></span></div>
+    </section>
+
+    <!-- Results -->
+    <section class="results" id="results" aria-live="polite" hidden>
+      <div class="results__head">
+        <div class="results__title">
+          <p class="results__eyebrow">نتائج البحث عن</p>
+          <h2 id="resultsQuery">«»</h2>
+        </div>
+        <div class="tabs" role="tablist" id="tabs">
+          <span class="tabs__ink" aria-hidden="true"></span>
+          <button role="tab" data-type="all" class="is-active">الكل <b data-count="all">٠</b></button>
+          <button role="tab" data-type="quran">القرآن الكريم <b data-count="quran">٠</b></button>
+          <button role="tab" data-type="hadith">الحديث الشريف <b data-count="hadith">٠</b></button>
+        </div>
+        <div class="results__tools">
+          <div class="counter" id="counter" aria-label="موضع البطاقة">
+            <span class="counter__now" id="counterNow">٠١</span>
+            <span class="counter__sep">/</span>
+            <span class="counter__total" id="counterTotal">٠٠</span>
+          </div>
+          <div class="view-toggle" role="group" aria-label="طريقة العرض">
+            <button type="button" data-view="stack" class="is-active" aria-label="عرض البطاقات المتراكبة">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="4" width="10" height="16" rx="2.5" /><path d="M4 7v10M20 7v10" /></svg>
+            </button>
+            <button type="button" data-view="grid" aria-label="عرض الشبكة">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="7" height="9" rx="2" /><rect x="13" y="4" width="7" height="5" rx="2" /><rect x="4" y="15" width="7" height="5" rx="2" /><rect x="13" y="11" width="7" height="9" rx="2" /></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+
+      <div class="books" id="books" hidden></div>
+
+      <!-- Stack (coverflow) view -->
+      <div class="stage" id="stage">
+        <button class="stage__arrow stage__arrow--prev" id="prevBtn" type="button" aria-label="السابق">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>
+        </button>
+        <div class="stack" id="stack" tabindex="0" aria-roledescription="carousel"></div>
+        <button class="stage__arrow stage__arrow--next" id="nextBtn" type="button" aria-label="التالي">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 6-6 6 6 6" /></svg>
+        </button>
+        <div class="stage__caption" id="caption"></div>
+        <div class="progress" aria-hidden="true"><span id="progressBar"></span></div>
+        <p class="stage__hint">اسحب البطاقات أو استخدم الأسهم ← →</p>
+      </div>
+
+      <!-- Grid view -->
+      <div class="grid" id="grid" hidden></div>
+      <div class="grid-sentinel" id="sentinel"></div>
+
+      <!-- States -->
+      <div class="state" id="stateLoading" hidden>
+        <svg class="state__star" viewBox="0 0 48 48" aria-hidden="true"><use href="#khatam" /></svg>
+        <p>نبحث لك بهدوء…</p>
+      </div>
+      <div class="state" id="stateEmpty" hidden>
+        <svg class="state__star state__star--still" viewBox="0 0 48 48" aria-hidden="true"><use href="#khatam" /></svg>
+        <p id="emptyText">لم نجد نتائج.</p>
+        <small>جرّب كلمة أقصر أو مرادفًا آخر، مثل: رزق، صبر، رحمة.</small>
+      </div>
+    </section>
+
+    <!-- About -->
+    <section class="about" id="about">
+      <div class="about__grid">
+        <article class="glass about__card">
+          <span class="about__num">١</span>
+          <h3>اكتب كلمة</h3>
+          <p>كلمة واحدة تكفي: «رزق» أو «الرزق» أو «يرزق». نبحث في الجذر والصيغ القريبة منه.</p>
+        </article>
+        <article class="glass about__card">
+          <span class="about__num">٢</span>
+          <h3>تصفّح البطاقات</h3>
+          <p>كل آية بسورتها ورقمها، وكل حديث بكتابه ورقمه وراويه ودرجة صحته.</p>
+        </article>
+        <article class="glass about__card">
+          <span class="about__num">٣</span>
+          <h3>تأمّل وشارك</h3>
+          <p>انسخ الآية أو الحديث، أو افتح المصدر كاملًا على Quran.com و Sunnah.com.</p>
+        </article>
+      </div>
+
+      <div class="sources glass" id="sources">
+        <h3>المصادر</h3>
+        <ul>
+          <li><b>القرآن الكريم</b> — نص المصحف بالتشكيل من <span lang="en">alquran.cloud</span></li>
+          <li><b>الكتب الستة</b> — صحيح البخاري، صحيح مسلم، سنن أبي داود، جامع الترمذي، سنن النسائي، سنن ابن ماجه</li>
+          <li><b>الأحكام</b> — أحاديث الصحيحين صحيحة، وأحكام السنن الأربع للألباني ثم غيره من المحققين</li>
+        </ul>
+        <p class="sources__note">تحديد الراوي يتم آليًا من سند الحديث وقد يخطئ أحيانًا؛ فارجع دائمًا إلى المصدر.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <span>سكينة · Sakinah</span>
+    <span>صُنع بطمأنينة</span>
+  </footer>
+
+  <!-- Daily ayah dialog -->
+  <dialog class="daily" id="daily">
+    <div class="daily__card glass" id="dailyCard"></div>
+    <button class="daily__close" type="button" id="dailyClose" aria-label="إغلاق">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
+    </button>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <!-- Shared SVG symbols -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <symbol id="khatam" viewBox="0 0 48 48">
+        <g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round">
+          <rect x="11" y="11" width="26" height="26" rx="1.5" />
+          <rect x="11" y="11" width="26" height="26" rx="1.5" transform="rotate(45 24 24)" />
+          <circle cx="24" cy="24" r="6.5" />
+        </g>
+      </symbol>
+    </defs>
+  </svg>
+
+  <script src="app.js" type="module"></script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+# Source design files (not needed to run the site)
+/fonts/
+*.pdf
+brand colors.jpg
+reference *.jpg
+header *.jpg
+
+# Local tooling
+.claude/
+node_modules/
+.DS_Store
+
+# Raw datasets (re-downloaded automatically by tools/build-data.js)
+/data/
