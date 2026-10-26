@@ -384,7 +384,7 @@ const engine = (() => {
 
   const start = () => {
     if (worker) return;
-    worker = new Worker('engine.js');
+    worker = new Worker('engine.js?v=9abbbdb9');
     worker.onmessage = ({ data }) => {
       if (data.type === 'progress') { progress = data.loaded / data.total; return showProgress(); }
       if (data.type === 'ready') { ready = true; return; }
