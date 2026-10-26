@@ -15,6 +15,7 @@ const state = {
   q: '',
   type: 'all',
   book: '',
+  senses: {}, // chosen meaning per ambiguous word, e.g. { ام: 'or' }
   items: [],
   total: 0,
   counts: null,
@@ -35,6 +36,7 @@ const el = {
   tabs: $('#tabs'),
   ink: $('.tabs__ink'),
   books: $('#books'),
+  senses: $('#senses'),
   stage: $('#stage'),
   stack: $('#stack'),
   grid: $('#grid'),
@@ -384,7 +386,7 @@ const engine = (() => {
 
   const start = () => {
     if (worker) return;
-    worker = new Worker('engine.js?v=9abbbdb9');
+    worker = new Worker('engine.js?v=40241f2a');
     worker.onmessage = ({ data }) => {
       if (data.type === 'progress') { progress = data.loaded / data.total; return showProgress(); }
       if (data.type === 'ready') { ready = true; return; }
@@ -418,7 +420,7 @@ function showProgress() {
 }
 
 function fetchPage(offset) {
-  return engine.call('search', { q: state.q, type: state.type, book: state.book, offset, limit: PAGE });
+  return engine.call('search', { q: state.q, type: state.type, book: state.book, senses: state.senses, offset, limit: PAGE });
 }
 
 async function runSearch({ push = true } = {}) {
@@ -441,6 +443,8 @@ async function runSearch({ push = true } = {}) {
     url.searchParams.set('q', q);
     state.type === 'all' ? url.searchParams.delete('type') : url.searchParams.set('type', state.type);
     state.book ? url.searchParams.set('book', state.book) : url.searchParams.delete('book');
+    const m = Object.entries(state.senses).map(([k, v]) => `${k}:${v}`).join(',');
+    m ? url.searchParams.set('m', m) : url.searchParams.delete('m');
     history.pushState({}, '', url);
   }
   document.title = `${q} · سكينة`;
@@ -454,6 +458,7 @@ async function runSearch({ push = true } = {}) {
     state.counts = data.counts;
     state.done = data.items.length >= data.total;
     renderCounts();
+    renderSenses(data.senses);
     showLoading(false);
     if (!data.total) {
       el.emptyText.innerHTML = `لم نجد نتائج لـ «${esc(q)}»${state.type !== 'all' || state.book ? ' في هذا القسم' : ''}.`;
@@ -547,6 +552,7 @@ el.form.addEventListener('submit', (e) => {
   if (!q) return el.input.focus();
   state.q = q;
   state.book = '';
+  state.senses = {};
   el.input.blur();
   runSearch();
 });
@@ -573,6 +579,29 @@ el.tabs.addEventListener('click', (e) => {
   state.type = b.dataset.type;
   state.book = '';
   moveInk();
+  runSearch();
+});
+
+// "Which meaning?" — shown when the query has a word written alike with different meanings.
+function renderSenses(list = []) {
+  el.senses.hidden = !list.length;
+  el.results.classList.toggle('has-senses', list.length > 0);
+  el.senses.innerHTML = list
+    .map(
+      (g) => `<div class="senses__group" role="group" aria-label="معنى «${esc(g.word)}»">
+        <span class="senses__label">معنى «${esc(g.word)}»:</span>
+        ${g.options
+          .map((o, k) => `<button type="button" data-key="${esc(g.key)}" data-sense="${o.id}" class="${o.id === g.active ? 'is-active' : ''}" style="--i:${k}" aria-pressed="${o.id === g.active}">${esc(o.label)}</button>`)
+          .join('')}
+      </div>`,
+    )
+    .join('');
+}
+
+el.senses.addEventListener('click', (e) => {
+  const b = e.target.closest('button[data-sense]');
+  if (!b || b.classList.contains('is-active')) return;
+  state.senses = { ...state.senses, [b.dataset.key]: b.dataset.sense };
   runSearch();
 });
 
@@ -979,6 +1008,7 @@ function fromUrl() {
   state.q = q;
   state.type = ['quran', 'hadith'].includes(p.get('type')) ? p.get('type') : 'all';
   state.book = p.get('book') || '';
+  state.senses = Object.fromEntries((p.get('m') || '').split(',').filter(Boolean).map((x) => x.split(':')));
   el.input.value = q;
   el.form.classList.add('has-value');
   $$('button', el.tabs).forEach((x) => x.classList.toggle('is-active', x.dataset.type === state.type));

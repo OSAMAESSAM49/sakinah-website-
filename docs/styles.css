@@ -408,6 +408,14 @@ body.is-searching .search { animation: settle 0.9s var(--ease); }
 .books button.is-active { background: var(--violet); border-color: var(--violet); color: #fff; }
 .books button.is-active span { color: rgba(255, 255, 255, 0.75); }
 
+/* Meaning chooser for words written alike (أم، الدين، البر …) */
+.senses { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+.senses__group { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.senses__label { font-size: 14px; color: var(--text-3); margin-inline-end: 2px; }
+.senses button { padding: 5px 14px; border-radius: 999px; font-size: 14px; color: var(--text-2); border: 1px dashed var(--glass-line); background: rgba(255, 255, 255, 0.04); transition: all 0.35s var(--ease); animation: fade-up 0.6s var(--ease) both; animation-delay: calc(var(--i) * 50ms); }
+.senses button:hover { color: var(--text); border-style: solid; }
+.senses button.is-active { background: var(--sun); border: 1px solid var(--sun); color: var(--ink); font-weight: 500; }
+
 /* ---------- Stage / Stack (coverflow) ---------- */
 .stage { position: relative; margin-top: 4px; --card-w: min(580px, 82vw); --card-h: clamp(400px, calc(100svh - 380px), 560px); }
 .stack {
@@ -809,6 +817,10 @@ body.has-player .footer { padding-bottom: calc(110px + var(--safe-bottom)); }
   .tabs button { flex: 1; justify-content: center; padding: 8px 10px; font-size: 14px; }
   .books { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding-bottom: 4px; }
   .books button { flex: none; }
+  .senses__group { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+  .senses__group::-webkit-scrollbar { display: none; }
+  .senses__group > * { flex: none; }
+  .results.has-senses .stage { --card-h: clamp(320px, calc(100svh - 480px - var(--safe-top) - var(--safe-bottom)), 470px); }
 
   .stage { overflow-x: clip; overflow-y: visible; --card-w: 84vw; --card-h: clamp(340px, calc(100svh - 400px - var(--safe-top) - var(--safe-bottom)), 500px); }
   .stage__arrow { display: none; }
