@@ -417,7 +417,7 @@ async function runSearch({ push = true } = {}) {
   Object.assign(state, { items: [], total: 0, active: 0, done: false, loading: true });
   stack.float = 0;
 
-  document.body.classList.add('is-searching');
+  setSearching(true);
   el.results.hidden = false;
   el.resultsQuery.innerHTML = `«<span class="q">${esc(q)}</span>»`;
   el.empty.hidden = true;
@@ -649,12 +649,19 @@ $$('[data-scroll]').forEach((a) => a.addEventListener('click', (e) => {
 
 addEventListener('scroll', () => document.body.classList.toggle('is-scrolled', scrollY > 30), { passive: true });
 
+// Safari tints its top bar with theme-color: sky blue over the landscape, deep blue over the results.
+const themeMeta = $('meta[name="theme-color"]');
+function setSearching(on) {
+  document.body.classList.toggle('is-searching', on);
+  themeMeta.content = on ? '#1B2236' : '#36608A';
+}
+
 /* ---------- URL state ---------- */
 function fromUrl() {
   const p = new URLSearchParams(location.search);
   const q = p.get('q');
   if (!q) {
-    document.body.classList.remove('is-searching');
+    setSearching(false);
     el.results.hidden = true;
     document.title = 'سكينة · Sakinah — ابحث في القرآن الكريم والكتب الستة';
     return;

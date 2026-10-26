@@ -43,12 +43,14 @@
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-soft: cubic-bezier(0.45, 0, 0.2, 1);
   --radius: 28px;
+  --safe-top: env(safe-area-inset-top, 0px);       /* Dynamic Island / status bar (installed app) */
+  --safe-bottom: env(safe-area-inset-bottom, 0px); /* home indicator */
   --gutter: max(clamp(16px, 4vw, 48px), env(safe-area-inset-left), env(safe-area-inset-right));
 }
 
 /* ---------- Base ---------- */
 *, *::before, *::after { box-sizing: border-box; }
-html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; overflow-x: hidden; }
+html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; overflow-x: hidden; background: var(--ink); }
 main { overflow-x: clip; }
 body {
   margin: 0;
@@ -127,7 +129,7 @@ body.is-searching .scene__veil {
 /* ---------- Nav ---------- */
 .nav {
   position: fixed;
-  top: 16px;
+  top: calc(16px + var(--safe-top));
   inset-inline: var(--gutter);
   z-index: 50;
   margin-inline: auto;
@@ -190,7 +192,7 @@ body.is-scrolled .nav, body.is-searching .nav { background: rgba(24, 24, 32, 0.4
   display: grid;
   grid-template-columns: minmax(0, 1fr); /* Safari: never let the column grow wider than the screen */
   place-items: center;
-  padding: 120px var(--gutter) 90px;
+  padding: calc(120px + var(--safe-top)) var(--gutter) calc(90px + var(--safe-bottom));
   overflow: clip;
   transition: min-height 1s var(--ease), padding 1s var(--ease);
 }
@@ -335,12 +337,12 @@ body.is-ready .reveal {
 }
 .chips button:hover { background: var(--sun); color: var(--ink); border-color: var(--sun); transform: translateY(-2px); }
 
-.scroll-hint { position: absolute; bottom: 28px; left: 50%; translate: -50% 0; width: 24px; height: 38px; border: 1.5px solid rgba(255, 255, 255, 0.55); border-radius: 14px; }
+.scroll-hint { position: absolute; bottom: calc(28px + var(--safe-bottom)); left: 50%; translate: -50% 0; width: 24px; height: 38px; border: 1.5px solid rgba(255, 255, 255, 0.55); border-radius: 14px; }
 .scroll-hint span { position: absolute; top: 7px; left: 50%; width: 3px; height: 7px; margin-left: -1.5px; border-radius: 2px; background: #fff; animation: wheel 2.2s var(--ease) infinite; }
 @keyframes wheel { 0% { opacity: 0; transform: translateY(0); } 30% { opacity: 1; } 100% { opacity: 0; transform: translateY(12px); } }
 
 /* Hero collapses when searching */
-body.is-searching .hero { min-height: 0; padding-top: 92px; padding-bottom: 0; }
+body.is-searching .hero { min-height: 0; padding-top: calc(92px + var(--safe-top)); padding-bottom: 0; }
 body.is-searching .hero__badge,
 body.is-searching .hero__title,
 body.is-searching .hero__sub,
@@ -634,7 +636,7 @@ mark {
 .sources b { color: var(--text); font-weight: 500; }
 .sources__note { margin: 14px 0 0; font-size: 14px; color: var(--text-3); }
 
-.footer { display: flex; justify-content: space-between; gap: 12px; width: min(1180px, 100%); margin: 0 auto; padding: 24px var(--gutter) 36px; font-size: 14px; color: var(--text-3); }
+.footer { display: flex; justify-content: space-between; gap: 12px; width: min(1180px, 100%); margin: 0 auto; padding: 24px var(--gutter) calc(36px + var(--safe-bottom)); font-size: 14px; color: var(--text-3); }
 
 /* ---------- Daily dialog ---------- */
 .daily { padding: 0; border: 0; background: transparent; color: var(--text); width: min(620px, calc(100vw - 32px)); max-height: none; overflow: visible; }
@@ -649,7 +651,7 @@ mark {
 .daily__close svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; }
 
 /* ---------- Toast ---------- */
-.toast { position: fixed; bottom: 24px; left: 50%; z-index: 300; translate: -50% 20px; padding: 10px 22px; border-radius: 999px; background: var(--text); color: var(--ink); font-weight: 500; opacity: 0; pointer-events: none; transition: opacity 0.4s var(--ease), translate 0.5s var(--ease); box-shadow: 0 16px 30px -12px rgba(0, 0, 0, 0.5); }
+.toast { position: fixed; bottom: calc(24px + var(--safe-bottom)); left: 50%; z-index: 300; translate: -50% 20px; padding: 10px 22px; border-radius: 999px; background: var(--text); color: var(--ink); font-weight: 500; opacity: 0; pointer-events: none; transition: opacity 0.4s var(--ease), translate 0.5s var(--ease); box-shadow: 0 16px 30px -12px rgba(0, 0, 0, 0.5); }
 .toast.is-on { opacity: 1; translate: -50% 0; }
 
 /* ==========================================================================
@@ -667,11 +669,11 @@ mark {
 
 @media (max-width: 760px) {
   body { font-size: 15px; }
-  .nav { top: 10px; padding: 6px; padding-inline-start: 14px; }
+  .nav { top: calc(10px + var(--safe-top)); padding: 6px; padding-inline-start: 14px; }
   .nav__links { display: none; }
   .brand__latin { display: none; }
   .nav__cta { padding: 9px 16px; font-size: 14px; }
-  .hero { padding-top: 104px; }
+  .hero { padding-top: calc(104px + var(--safe-top)); }
   .hero__badge { font-size: 13px; padding: 6px 14px; margin-bottom: 20px; }
   .hero__sub { margin: 16px 0 26px; }
   .search { padding: 5px; padding-inline-start: 16px; }
@@ -680,7 +682,7 @@ mark {
   .search__btn span { display: none; }
   .chips { gap: 8px; }
   .chips button { padding: 6px 14px; font-size: 14px; }
-  body.is-searching .hero { padding-top: 84px; }
+  body.is-searching .hero { padding-top: calc(84px + var(--safe-top)); }
   body.is-searching .chips { flex-wrap: nowrap; overflow-x: auto; justify-content: flex-start; width: 100%; padding-bottom: 4px; scrollbar-width: none; -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); }
   body.is-searching .chips button { flex: none; }
 
@@ -693,7 +695,7 @@ mark {
   .books { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding-bottom: 4px; }
   .books button { flex: none; }
 
-  .stage { overflow-x: clip; overflow-y: visible; --card-w: 84vw; --card-h: clamp(340px, calc(100svh - 400px), 500px); }
+  .stage { overflow-x: clip; overflow-y: visible; --card-w: 84vw; --card-h: clamp(340px, calc(100svh - 400px - var(--safe-top) - var(--safe-bottom)), 500px); }
   .stage__arrow { display: none; }
   .card { padding: 20px 20px 16px; }
   .card__source { font-size: 21px; }
