@@ -188,6 +188,8 @@
           <li><b>القرآن الكريم</b> — نص المصحف بالتشكيل من <span lang="en">alquran.cloud</span></li>
           <li><b>الكتب الستة</b> — صحيح البخاري، صحيح مسلم، سنن أبي داود، جامع الترمذي، سنن النسائي، سنن ابن ماجه</li>
           <li><b>الأحكام</b> — أحاديث الصحيحين صحيحة، وأحكام السنن الأربع للألباني ثم غيره من المحققين</li>
+          <li><b>التفسير</b> — الميسر، السعدي، ابن كثير، الطبري، القرطبي، البغوي، الوسيط من <span lang="en">spa5k/tafsir_api</span></li>
+          <li><b>التلاوات</b> — بأصوات كبار القراء من <span lang="en">Islamic Network</span>، والحديث يُقرأ بالصوت العربي المتاح على جهازك</li>
         </ul>
         <p class="sources__note">تحديد الراوي يتم آليًا من سند الحديث وقد يخطئ أحيانًا؛ فارجع دائمًا إلى المصدر.</p>
       </div>
@@ -206,6 +208,46 @@
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
     </button>
   </dialog>
+
+  <!-- Tafsir -->
+  <dialog class="sheet" id="tafsir" aria-labelledby="tafsirTitle">
+    <div class="sheet__panel">
+      <header class="sheet__head">
+        <div>
+          <p class="sheet__eyebrow">التفسير</p>
+          <h2 id="tafsirTitle"></h2>
+        </div>
+        <button class="sheet__close" type="button" id="tafsirClose" aria-label="إغلاق">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
+        </button>
+      </header>
+      <p class="sheet__ayah" id="tafsirAyah"></p>
+      <div class="sheet__tabs" id="tafsirTabs" role="tablist" aria-label="كتب التفسير"></div>
+      <div class="sheet__body" id="tafsirBody"></div>
+      <p class="sheet__about" id="tafsirAbout"></p>
+    </div>
+  </dialog>
+
+  <!-- Now playing -->
+  <div class="player" id="player" role="region" aria-label="الاستماع" hidden>
+    <button class="player__toggle" id="playerToggle" type="button" aria-label="إيقاف مؤقت">
+      <svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z" /></svg>
+      <svg class="i-pause" viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="5" width="4" height="14" rx="1.2" /><rect x="13.5" y="5" width="4" height="14" rx="1.2" /></svg>
+    </button>
+    <div class="player__info">
+      <span class="player__title" id="playerTitle"></span>
+      <span class="player__sub" id="playerSub"></span>
+    </div>
+    <span class="player__eq" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+    <label class="player__reciter">
+      <span class="sr-only">القارئ</span>
+      <select id="reciterSelect"></select>
+    </label>
+    <button class="player__close" id="playerClose" type="button" aria-label="إيقاف الاستماع">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
+    </button>
+    <span class="player__progress" aria-hidden="true"><span id="playerBar"></span></span>
+  </div>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 

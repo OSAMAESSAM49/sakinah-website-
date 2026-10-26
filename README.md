@@ -41,5 +41,8 @@ node server.js
 - القرآن الكريم: [alquran.cloud](https://alquran.cloud)
 - الحديث: [fawazahmed0/hadith-api](https://github.com/fawazahmed0/hadith-api)
 - الأحكام: الصحيحان صحيحة، والسنن الأربع بحكم الألباني أولًا ثم غيره
+- التفسير (الميسر، السعدي، ابن كثير، الطبري، القرطبي، البغوي، الوسيط): [spa5k/tafsir_api](https://github.com/spa5k/tafsir_api) — يُحمَّل عند الطلب
+- التلاوات: [Islamic Network CDN](https://alquran.cloud/cdn) (العفاسي، الحصري، المنشاوي، عبد الباسط، المعيقلي، السديس)
+- قراءة الحديث: الصوت العربي المدمج في جهاز المستخدم (Web Speech API)
 
 > الراوي يُستخرج آليًا من السند، وقد يخطئ في حالات قليلة.

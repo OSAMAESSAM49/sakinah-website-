@@ -62,7 +62,13 @@ const ICONS = {
   share: '<svg viewBox="0 0 24 24"><path d="M12 15V4m0 0L8 8m4-4 4 4"/><path d="M5 12v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg>',
   open: '<svg viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9"/><path d="M18 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4"/></svg>',
   chain: '<svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h10M4 18h7"/></svg>',
+  book: '<svg viewBox="0 0 24 24"><path d="M12 6.5C10 5 7 4.5 4 5v13c3-.5 6 0 8 1.5 2-1.5 5-2 8-1.5V5c-3-.5-6 0-8 1.5z"/><path d="M12 6.5v13"/></svg>',
+  play: '<svg class="i-play" viewBox="0 0 24 24"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor"/></svg>',
+  pause: '<svg class="i-pause" viewBox="0 0 24 24"><rect x="6.5" y="5" width="4" height="14" rx="1.2" fill="currentColor" stroke="none"/><rect x="13.5" y="5" width="4" height="14" rx="1.2" fill="currentColor" stroke="none"/></svg>',
 };
+
+const playBtn = (item, label) =>
+  `<button class="icon-btn icon-btn--play" data-act="play" data-id="${item.id}" type="button" aria-label="${label}" title="${label}">${ICONS.play}${ICONS.pause}</button>`;
 
 function textHtml(item) {
   const hl = new Set(item.hl || []);
@@ -90,6 +96,8 @@ function cardHtml(item, i) {
   <div class="card__foot">
     <div class="card__meta"><span class="tag">﴿ ${esc(item.surah.name)} : <b>${ar(item.ayah)}</b> ﴾</span></div>
     <div class="card__actions">
+      ${playBtn(item, 'استماع للتلاوة')}
+      <button class="icon-btn" data-act="tafsir" type="button" aria-label="التفسير" title="التفسير">${ICONS.book}</button>
       <button class="icon-btn" data-act="copy" type="button" aria-label="نسخ الآية" title="نسخ">${ICONS.copy}</button>
       <button class="icon-btn" data-act="share" type="button" aria-label="مشاركة" title="مشاركة">${ICONS.share}</button>
       <a class="icon-btn" href="https://quran.com/${item.surah.number}/${item.ayah}" target="_blank" rel="noopener" aria-label="فتح على Quran.com" title="فتح المصدر">${ICONS.open}</a>
@@ -115,6 +123,7 @@ function cardHtml(item, i) {
   <div class="card__foot">
     <div class="card__meta">${grade}</div>
     <div class="card__actions">
+      ${playBtn(item, 'استماع (قراءة آلية)')}
       ${item.fullText ? `<button class="icon-btn" data-act="full" type="button" aria-label="عرض السند كاملًا" title="السند كاملًا">${ICONS.chain}</button>` : ''}
       <button class="icon-btn" data-act="copy" type="button" aria-label="نسخ الحديث" title="نسخ">${ICONS.copy}</button>
       <button class="icon-btn" data-act="share" type="button" aria-label="مشاركة" title="مشاركة">${ICONS.share}</button>
@@ -183,6 +192,7 @@ function renderStack(append = false) {
   }
   layoutStack();
   updateMeta();
+  player.sync();
 }
 
 function goTo(i) {
@@ -323,6 +333,7 @@ function renderGrid(append = false) {
     card.style.setProperty("--i", k % 6);
     revealObserver.observe(card);
   });
+  player.sync();
 }
 
 addEventListener("resize", () => {
@@ -581,7 +592,7 @@ $$('.view-toggle button').forEach((b) =>
   }),
 );
 
-// Card actions (copy / share / full chain) — delegated for both views and the dialog
+// Card actions (listen / tafsir / copy / share / full chain) — delegated for both views and the dialog
 document.addEventListener('click', async (e) => {
   const btn = e.target.closest('[data-act]');
   if (!btn) return;
@@ -589,6 +600,9 @@ document.addEventListener('click', async (e) => {
   const item = card.dataset.i === 'daily' ? dailyItem : state.items[Number(card.dataset.i)];
   if (!item) return;
   const act = btn.dataset.act;
+
+  if (act === 'play') return player.toggle(item);
+  if (act === 'tafsir') return tafsir.open(item);
 
   if (act === 'full') {
     const body = $('.card__body', card);
@@ -624,6 +638,301 @@ function toast(msg) {
   toastTimer = setTimeout(() => el.toast.classList.remove('is-on'), 2200);
 }
 
+const pref = (key, value) => {
+  try {
+    if (value === undefined) return localStorage.getItem(`sakinah:${key}`);
+    localStorage.setItem(`sakinah:${key}`, value);
+  } catch {}
+  return null;
+};
+
+/* ==========================================================================
+   Listening — Quran recitations (audio) · hadith (the device's Arabic voice)
+   ========================================================================== */
+
+// Recitations by ayah from the Islamic Network CDN (the audio behind alquran.cloud).
+const RECITERS = [
+  { id: 'ar.alafasy', name: 'مشاري العفاسي', bitrate: 128 },
+  { id: 'ar.husary', name: 'محمود خليل الحصري', bitrate: 64 },
+  { id: 'ar.minshawi', name: 'محمد صديق المنشاوي', bitrate: 128 },
+  { id: 'ar.abdulbasitmurattal', name: 'عبد الباسط عبد الصمد', bitrate: 64 },
+  { id: 'ar.mahermuaiqly', name: 'ماهر المعيقلي', bitrate: 128 },
+  { id: 'ar.abdurrahmaansudais', name: 'عبد الرحمن السديس', bitrate: 192 },
+];
+
+const player = (() => {
+  const ui = {
+    bar: $('#player'),
+    toggle: $('#playerToggle'),
+    title: $('#playerTitle'),
+    sub: $('#playerSub'),
+    reciter: $('#reciterSelect'),
+    progress: $('#playerBar'),
+  };
+  const audio = new Audio();
+  audio.preload = 'none';
+  let reciter = RECITERS.find((r) => r.id === pref('reciter')) || RECITERS[0];
+  let current = null; // the item being listened to
+  let playing = false;
+  let voiceRun = 0; // invalidates callbacks of a cancelled speech
+
+  ui.reciter.innerHTML = RECITERS.map((r) => `<option value="${r.id}">${r.name}</option>`).join('');
+  ui.reciter.value = reciter.id;
+
+  const isQuran = () => current?.kind === 'quran';
+
+  function sync() {
+    ui.bar.hidden = !current;
+    document.body.classList.toggle('has-player', !!current);
+    ui.bar.classList.toggle('is-playing', playing);
+    $$('[data-act="play"]').forEach((b) => {
+      const on = !!current && b.dataset.id === current.id && playing;
+      b.classList.toggle('is-playing', on);
+      b.setAttribute('aria-pressed', on);
+    });
+    if (!current) return;
+    ui.title.textContent = isQuran()
+      ? `سورة ${current.surah.name} · الآية ${ar(current.ayah)}`
+      : `${current.bookName} · ${ar(current.number)}`;
+    ui.sub.textContent = isQuran() ? `بصوت ${reciter.name}` : 'قراءة آلية بصوت جهازك';
+    ui.reciter.hidden = !isQuran();
+    ui.toggle.setAttribute('aria-label', playing ? 'إيقاف مؤقت' : 'تشغيل');
+  }
+
+  function setProgress(p) {
+    ui.progress.style.width = `${Math.max(0, Math.min(1, p)) * 100}%`;
+  }
+
+  function mediaSession() {
+    if (!('mediaSession' in navigator) || !current) return;
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: ui.title.textContent,
+      artist: ui.sub.textContent,
+      album: 'سكينة',
+      artwork: [{ src: 'assets/icons/icon-512.png', sizes: '512x512', type: 'image/png' }],
+    });
+  }
+
+  /* ---- Quran audio ---- */
+  const ayahNumber = (item) => Number(item.id.slice(1)); // "q262" -> 262 (position in the mushaf)
+  const audioUrl = (item) =>
+    `https://cdn.islamic.network/quran/audio/${reciter.bitrate}/${reciter.id}/${ayahNumber(item)}.mp3`;
+
+  audio.addEventListener('playing', () => { playing = true; ui.bar.classList.remove('is-loading'); sync(); });
+  audio.addEventListener('pause', () => { playing = false; sync(); });
+  audio.addEventListener('waiting', () => ui.bar.classList.add('is-loading'));
+  audio.addEventListener('timeupdate', () => audio.duration && setProgress(audio.currentTime / audio.duration));
+  audio.addEventListener('ended', () => stop());
+  audio.addEventListener('error', () => {
+    if (!audio.getAttribute('src')) return;
+    toast('تعذّر تشغيل التلاوة، تأكد من الاتصال');
+    stop();
+  });
+
+  /* ---- Hadith: speech synthesis ---- */
+  const arabicVoice = () => speechSynthesis.getVoices().find((v) => /^ar([-_]|$)/i.test(v.lang));
+
+  // Long texts are cut into sentences: some engines stop speaking after ~15 seconds of one utterance.
+  function sentences(text) {
+    const parts = text.replace(/["«»“”]/g, ' ').split(/(?<=[.،؛:!؟])\s+/);
+    const out = [];
+    for (const p of parts) {
+      if (out.length && out[out.length - 1].length + p.length < 180) out[out.length - 1] += ` ${p}`;
+      else out.push(p);
+    }
+    return out.filter((p) => p.trim());
+  }
+
+  function speak(item) {
+    if (!('speechSynthesis' in window)) {
+      toast('المتصفح لا يدعم القراءة الصوتية');
+      return false;
+    }
+    const voices = speechSynthesis.getVoices();
+    const voice = arabicVoice();
+    if (voices.length && !voice) {
+      toast('لا يوجد صوت عربي على هذا الجهاز');
+      return false;
+    }
+    const run = ++voiceRun;
+    const chunks = sentences(item.text);
+    chunks.forEach((t, k) => {
+      const u = new SpeechSynthesisUtterance(t);
+      u.lang = voice?.lang || 'ar-SA';
+      if (voice) u.voice = voice;
+      u.rate = 0.92;
+      u.onstart = () => {
+        if (run !== voiceRun) return;
+        playing = true;
+        setProgress(k / chunks.length);
+        sync();
+      };
+      if (k === chunks.length - 1) u.onend = () => run === voiceRun && stop();
+      speechSynthesis.speak(u); // queued now, inside the tap — required on iOS
+    });
+    return true;
+  }
+
+  /* ---- controls ---- */
+  function start(item) {
+    stop();
+    current = item;
+    setProgress(0);
+    if (item.kind === 'quran') {
+      ui.bar.classList.add('is-loading');
+      audio.src = audioUrl(item);
+      audio.play().catch(() => {});
+    } else if (!speak(item)) {
+      current = null;
+    }
+    sync();
+    mediaSession();
+  }
+
+  function pause() {
+    if (isQuran()) audio.pause();
+    else { speechSynthesis.pause(); playing = false; sync(); }
+  }
+
+  function resume() {
+    if (isQuran()) audio.play().catch(() => {});
+    else { speechSynthesis.resume(); playing = true; sync(); }
+  }
+
+  function stop() {
+    voiceRun++;
+    if ('speechSynthesis' in window) speechSynthesis.cancel();
+    audio.pause();
+    audio.removeAttribute('src');
+    audio.load();
+    current = null;
+    playing = false;
+    ui.bar.classList.remove('is-loading');
+    sync();
+  }
+
+  function toggle(item) {
+    if (current && current.id === item.id) return playing ? pause() : resume();
+    start(item);
+  }
+
+  ui.toggle.addEventListener('click', () => current && (playing ? pause() : resume()));
+  $('#playerClose').addEventListener('click', stop);
+  ui.reciter.addEventListener('change', () => {
+    reciter = RECITERS.find((r) => r.id === ui.reciter.value) || RECITERS[0];
+    pref('reciter', reciter.id);
+    if (isQuran()) start(current); // replay the same ayah with the new voice
+  });
+  if ('mediaSession' in navigator) {
+    navigator.mediaSession.setActionHandler('play', resume);
+    navigator.mediaSession.setActionHandler('pause', pause);
+    navigator.mediaSession.setActionHandler('stop', stop);
+  }
+  if ('speechSynthesis' in window) speechSynthesis.getVoices(); // starts loading voices early (Chrome)
+
+  return { toggle, stop, sync };
+})();
+
+/* ==========================================================================
+   Tafsir — seven classical tafsir books, per ayah (spa5k/tafsir_api, free & open)
+   ========================================================================== */
+
+const TAFSIRS = [
+  { slug: 'ar-tafsir-muyassar', name: 'الميسّر', about: 'التفسير الميسر — مجمع الملك فهد' },
+  { slug: 'ar-tafseer-al-saddi', name: 'السعدي', about: 'تيسير الكريم الرحمن — عبد الرحمن السعدي' },
+  { slug: 'ar-tafsir-ibn-kathir', name: 'ابن كثير', about: 'تفسير القرآن العظيم — ابن كثير' },
+  { slug: 'ar-tafsir-al-tabari', name: 'الطبري', about: 'جامع البيان — ابن جرير الطبري' },
+  { slug: 'ar-tafseer-al-qurtubi', name: 'القرطبي', about: 'الجامع لأحكام القرآن — القرطبي' },
+  { slug: 'ar-tafsir-al-baghawi', name: 'البغوي', about: 'معالم التنزيل — البغوي' },
+  { slug: 'ar-tafsir-al-wasit', name: 'الوسيط', about: 'التفسير الوسيط — محمد سيد طنطاوي' },
+];
+const TAFSIR_URLS = [
+  (t, s, a) => `https://raw.githubusercontent.com/spa5k/tafsir_api/main/tafsir/${t}/${s}/${a}.json`,
+  (t, s, a) => `https://cdn.jsdelivr.net/gh/spa5k/tafsir_api@main/tafsir/${t}/${s}/${a}.json`,
+];
+
+const tafsir = (() => {
+  const ui = {
+    dialog: $('#tafsir'),
+    title: $('#tafsirTitle'),
+    ayah: $('#tafsirAyah'),
+    tabs: $('#tafsirTabs'),
+    body: $('#tafsirBody'),
+    about: $('#tafsirAbout'),
+  };
+  const cache = new Map();
+  let item = null;
+  let book = TAFSIRS.find((t) => t.slug === pref('tafsir')) || TAFSIRS[0];
+  let run = 0;
+
+  ui.tabs.innerHTML = TAFSIRS.map(
+    (t) => `<button type="button" role="tab" data-slug="${t.slug}">${t.name}</button>`,
+  ).join('');
+
+  async function fetchTafsir(slug, s, a) {
+    const key = `${slug}/${s}/${a}`;
+    if (cache.has(key)) return cache.get(key);
+    for (const url of TAFSIR_URLS) {
+      try {
+        const res = await fetch(url(slug, s, a));
+        if (!res.ok) continue;
+        const { text } = await res.json();
+        if (typeof text !== 'string') continue;
+        cache.set(key, text);
+        return text;
+      } catch { /* try the next mirror */ }
+    }
+    throw new Error('تعذّر تحميل التفسير، تأكد من الاتصال ثم حاول مرة أخرى.');
+  }
+
+  // Escaped text with Quranic quotations (﴿…﴾ and {…}) tinted.
+  const tafsirHtml = (text) =>
+    esc(text.trim()).replace(/﴿[^﴾]{1,600}﴾|\{[^}]{1,600}\}/g, (q) => `<span class="q">${q}</span>`);
+
+  async function show() {
+    const r = ++run;
+    $$('button', ui.tabs).forEach((b) => {
+      const on = b.dataset.slug === book.slug;
+      b.classList.toggle('is-active', on);
+      b.setAttribute('aria-selected', on);
+      if (on) b.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    });
+    ui.about.textContent = book.about;
+    ui.body.scrollTop = 0;
+    ui.body.innerHTML = '<span class="sk"></span><span class="sk" style="width:92%"></span><span class="sk" style="width:84%"></span><span class="sk" style="width:60%"></span>';
+    try {
+      const text = await fetchTafsir(book.slug, item.surah.number, item.ayah);
+      if (r !== run) return;
+      ui.body.innerHTML = text.trim()
+        ? `<div class="tafsir-text">${tafsirHtml(text)}</div>`
+        : '<p class="sheet__empty">لا يوجد تفسير مستقل لهذه الآية في هذا الكتاب، جرّب كتابًا آخر.</p>';
+    } catch (err) {
+      if (r !== run) return;
+      ui.body.innerHTML = `<p class="sheet__empty">${esc(err.message)}</p>`;
+    }
+  }
+
+  function open(target) {
+    item = target;
+    ui.title.textContent = `سورة ${item.surah.name} · الآية ${ar(item.ayah)}`;
+    ui.ayah.innerHTML = `﴿${esc(item.text)}﴾`;
+    if (!ui.dialog.open) ui.dialog.showModal();
+    show();
+  }
+
+  ui.tabs.addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-slug]');
+    if (!b || b.dataset.slug === book.slug) return;
+    book = TAFSIRS.find((t) => t.slug === b.dataset.slug);
+    pref('tafsir', book.slug);
+    show();
+  });
+  $('#tafsirClose').addEventListener('click', () => ui.dialog.close());
+  ui.dialog.addEventListener('click', (e) => { if (e.target === ui.dialog) ui.dialog.close(); });
+
+  return { open };
+})();
+
 /* ---------- Daily ayah ---------- */
 let dailyItem = null;
 $('#dailyBtn').addEventListener('click', async () => {
@@ -633,6 +942,7 @@ $('#dailyBtn').addEventListener('click', async () => {
       dailyItem = await engine.call('daily');
     }
     el.dailyCard.innerHTML = cardHtml(dailyItem, 'daily');
+    player.sync();
     el.daily.showModal();
   } catch (err) {
     toast(err.message || 'تعذّر تحميل آية اليوم');
